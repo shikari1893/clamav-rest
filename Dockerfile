@@ -10,18 +10,9 @@ RUN apk add git
 RUN apk add tzdata
 RUN ln -s /usr/share/zoneinfo/Europe/Zurich /etc/localtime
 
-RUN apk add --no-cache git make musl-dev go
+RUN apk add --no-cache git
 
-# Configure Go
-ENV GOROOT /usr/lib/go
-ENV GOPATH /go/src
-ENV PATH /go/bin:$PATH
 
-RUN mkdir -p ${GOPATH} /go/bin
-
-WORKDIR $GOPATH
-
-CMD ["make"]
 
 # Install ClamAV
 RUN apk --no-cache add clamav clamav-libunrar \
@@ -35,13 +26,6 @@ RUN sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/clamd.conf \
 
 RUN freshclam --quiet --no-dns
 
-# Build go package
-ADD . /go/src/clamav-rest/
-ADD ./server.* /etc/ssl/clamav-rest/
-RUN cd /go/src/clamav-rest && go mod download github.com/dutchcoders/go-clamd@latest && go mod init clamav-rest && go mod tidy && go mod vendor && go build -v
-
-COPY entrypoint.sh /usr/bin/
-RUN mv /go/src/clamav-rest/clamav-rest /usr/bin/ && rm -Rf /go/src/clamav-rest
 
 EXPOSE 9000
 EXPOSE 9443
